@@ -7,8 +7,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import exceptions.DeckException;
+import exceptions.HandException;
 import netgame.common.Hub;
 import pokerBase.Action;
 import pokerBase.Card;
@@ -16,11 +18,14 @@ import pokerBase.CardDraw;
 import pokerBase.Deck;
 import pokerBase.GamePlay;
 import pokerBase.GamePlayPlayerHand;
+import pokerBase.Hand;
 import pokerBase.Player;
 import pokerBase.Rule;
 import pokerBase.Table;
 import pokerEnums.eAction;
+import pokerEnums.eCardCount;
 import pokerEnums.eCardDestination;
+import pokerEnums.eCardVisibility;
 import pokerEnums.eDrawCount;
 import pokerEnums.eGame;
 import pokerEnums.eGameState;
@@ -30,25 +35,30 @@ public class PokerHub extends Hub {
 	private Table HubPokerTable = new Table();
 	private GamePlay HubGamePlay;
 	private int iDealNbr = 0;
+	private int drawCount = 0;
 	private eGameState eGameState;
 	private int dealernbr;
 	private Deck deck;
 	private ArrayList<Card> CommunityCards;
 	
-	public Deck getdeck(){
+
+	
+	public Deck getdeck() {
 		return deck;
 	}
-	public int getDealernbr(){
+
+	public int getDealernbr() {
 		return dealernbr;
-	}	
-	
+	}
+
 	public PokerHub(int port) throws IOException {
 		super(port);
 	}
-	//Bonus- will not disconnect after player 2 joins, allows 4 people to play
+
+	// Bonus- will not disconnect after player 2 joins, allows 4 people to play
 	protected void playerConnected(int playerID) {
 
-		if (playerID == 5) {
+		if (playerID == 4) {
 			shutdownServerSocket();
 		}
 	}
@@ -89,12 +99,11 @@ public class PokerHub extends Hub {
 
 				// Determine which game is selected (from RootTableController)
 				// 1 line of code
-				
+
 				// Get the Rule based on the game selected
 				// 1 line of code
 
 				Rule rle = new Rule(act.geteGame());
-				
 				int community = rle.getCommunityCardsMin();
 
 				// The table should eventually allow multiple instances of
@@ -106,7 +115,7 @@ public class PokerHub extends Hub {
 				// < 5 lines of code to pick random player
 
 				Player p = HubPokerTable.PickRandomPlayerAtTable();
-				
+
 				System.out.println("Random Player: " + p.getiPlayerPosition());
 
 				// Start a new instance of GamePlay, based on rule set and
@@ -126,18 +135,17 @@ public class PokerHub extends Hub {
 				// 1 line of code
 				HubGamePlay.setGameDeck(new Deck(rle.GetNumberOfJokers(), rle.GetWildCards()));
 
-				//Deal to the community
-				for (int i=0; i<community; i++){
+				// Deal to the community
+				for (int i = 0; i < community; i++) {
 					Card c = null;
 					try {
 						c = deck.Draw();
 						CommunityCards.add(c);
-					}
-					catch (DeckException e){
+					} catch (DeckException e) {
 						e.printStackTrace();
 					}
 				}
-				
+
 				// Determine the order of players and add each player in turn to
 				// GamePlay.lnkPlayerOrder
 				// Example... four players playing... seated in Position 1, 2,
@@ -174,7 +182,8 @@ public class PokerHub extends Hub {
 				// set the draw to the first draw
 				HubGamePlay.setDrawCnt(eDrawCount.FIRST);
 
-				//	try to deal the cards... this can potentially throw an exception.. if so, send the exception back to the client
+				// try to deal the cards... this can potentially throw an
+				// exception.. if so, send the exception back to the client
 				try {
 					DealCards(HubGamePlay.getRule().getCardDraw(HubGamePlay.getDrawCnt()));
 				} catch (DeckException e) {
@@ -189,11 +198,51 @@ public class PokerHub extends Hub {
 			case Deal:
 
 				break;
-			}
-		}
 
-		// System.out.println("Message Received by Hub");
-	}
+			case Draw://the results of many attempts
+				resetOutput();
+				Player win = null;
+				ArrayList<Hand> hand = new ArrayList<Hand>();
+				eDrawCount maxDrawCount = eDrawCount.getMaxDrawCount(HubGamePlay.getRule().GetPlayerNumberOfCards()-1);
+				int maxHand = 0;
+				Hand maxxHand = null;
+				int maxHandStrength = 0;
+				ArrayList<Hand> hands = new ArrayList<Hand>();
+				
+				if(drawCount != 0){
+					drawCount++;
+					HubGamePlay.setDrawCnt(eDrawCount.getAnotherDrawNo(maxDrawCount.getDrawNo()));
+					
+					}
+				else if(drawCount == maxHand){
+					
+				
+				HashMap<UUID, Player> players = HubGamePlay.getGamePlayers();
+				for (Player player : players.values()) {
+					try{
+						maxHand = Hand.Evaluate(hand).getHandScore().getHandStrength();
+				if(maxHand >= maxHandStrength){
+					maxxHand = HubGamePlay.getPlayerHand(player.getPlayerID());
+					maxHandStrength = maxHand;
+					win = player;
+				}
+					} catch (HandException e){
+						
+					}
+			
+				
+				
+				//show winner
+				HubGamePlay.setWinner(win); 
+				System.out.println(win.getPlayerName());}} 
+
+				sendToAll(HubGamePlay);
+				break;
+
+			
+		}}}
+
+	// System.out.println("Message Received by Hub");
 
 	private void DealCards(CardDraw cd) throws DeckException {
 		for (int i = 0; i < cd.getCardCountDrawn().getCardCount(); i++) {
@@ -201,7 +250,7 @@ public class PokerHub extends Hub {
 			if (cd.getCardDestination() == eCardDestination.Player) {
 				for (int n : HubGamePlay.getiActOrder()) {
 					// If Player at the position exists... and the their hand
-					// isnt' folded, deal a card
+					// isnt folded, deal a card
 					if ((HubGamePlay.getPlayerByPosition(n) != null)
 							&& (HubGamePlay.getPlayerHand(HubGamePlay.getPlayerByPosition(n).getPlayerID()))
 									.isFolded() == false) {
@@ -210,9 +259,7 @@ public class PokerHub extends Hub {
 					}
 				}
 
-			}
-			else if (cd.getCardDestination() == eCardDestination.Community)
-			{
+			} else if (cd.getCardDestination() == eCardDestination.Community) {
 				HubGamePlay.getCommonHand().Draw(HubGamePlay.getGameDeck());
 			}
 		}

@@ -17,6 +17,8 @@ public class Player implements Serializable {
 
 	@XmlElement
 	private int iPokerClientID;
+	
+	private boolean theWinner = false;
 
 	public Player() {
 
@@ -59,6 +61,15 @@ public class Player implements Serializable {
 
 	public int getiPokerClientID() {
 		return iPokerClientID;
+	}
+	
+	//Making the game able to display the winner
+	public boolean getTheWinner() {
+		return theWinner;
+	}
+	
+	public void setTheWinner(boolean theWinner) {
+		this.theWinner = theWinner;
 	}
 
 

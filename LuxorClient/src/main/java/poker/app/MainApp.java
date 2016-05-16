@@ -42,10 +42,11 @@ public class MainApp extends Application {
 	private BorderPane rootLayout;
 
 	private PokerHub pHub = null;
-	
-	public PokerHub getpHub(){
+
+	public PokerHub getpHub() {
 		return pHub;
 	}
+
 	private PokerClient pClient = null;
 
 	private PokerTableController pokerController = null;
@@ -54,14 +55,14 @@ public class MainApp extends Application {
 	private boolean isServer = false;
 
 	private TextArea messages = new TextArea();
-	//private NetworkConnection connection = createClient();
+	// private NetworkConnection connection = createClient();
 
 	private Player appPlayer;
 
-	public int GetPlayerID()
-	{
+	public int GetPlayerID() {
 		return pClient.getID();
 	}
+
 	public Player getPlayer() {
 		return appPlayer;
 	}
@@ -77,7 +78,7 @@ public class MainApp extends Application {
 	@Override
 	public void init() throws Exception {
 		// INIT is executed by the Application framework FIRST
-		//connection.startConnection();
+		// connection.startConnection();
 	}
 
 	@Override
@@ -88,7 +89,7 @@ public class MainApp extends Application {
 		Scene scene = new Scene(root, 1300, 500);
 
 		this.primaryStage = primaryStage;
-		
+
 		Screen screen = Screen.getPrimary();
 		Rectangle2D bounds = screen.getVisualBounds();
 
@@ -96,7 +97,7 @@ public class MainApp extends Application {
 		primaryStage.setY(bounds.getMinY());
 		primaryStage.setWidth(bounds.getWidth());
 		primaryStage.setHeight(bounds.getHeight());
-		
+
 		this.primaryStage.setTitle("Poker");
 
 		// Set the application icon.
@@ -125,10 +126,10 @@ public class MainApp extends Application {
 		}
 
 		setPlayer(new Player(strPlayerName, pClient.getID()));
-		
+
 		initRootLayout();
 
-		showPokerTable();		
+		showPokerTable();
 	}
 
 	public void showClientServer() {
@@ -185,10 +186,10 @@ public class MainApp extends Application {
 			rootLayout.setCenter(pokerOverview);
 
 			// Give the controller access to the main app.
-			//PokerTableController controller = loader.getController();
+			// PokerTableController controller = loader.getController();
 			pokerController = loader.getController();
 			pokerController.setMainApp(this);
-			
+
 			getPlayer().setiPlayerPosition(0);
 			Action act = new Action(eAction.TableState, getPlayer());
 			messageSend(act);
@@ -210,19 +211,17 @@ public class MainApp extends Application {
 
 	@Override
 	public void stop() throws Exception {
-		//connection.closeConnection();
+		// connection.closeConnection();
 	}
 
-	public void messageSend(final Object message)
-	{
-		pClient.messageSend(message);	
+	public void messageSend(final Object message) {
+		pClient.messageSend(message);
 	}
-	
-	public String getRuleName()
-	{
+
+	public String getRuleName() {
 		return rootController.getRuleName();
 	}
-	
+
 	private class PokerClient extends Client {
 
 		public PokerClient(String hubHostName, int hubPort) throws IOException {
@@ -232,57 +231,52 @@ public class MainApp extends Application {
 		/*
 		 * messageSend - One single place to send messages
 		 */
-		protected void messageSend(Object message)
-		{
+		protected void messageSend(Object message) {
 			resetOutput();
 			super.send(message);
 		}
-		
+
 		/*
-		 * messageReceived will get an Object message... it's up to you to determine
-		 * what should happen to that the message.
+		 * messageReceived will get an Object message... it's up to you to
+		 * determine what should happen to that the message.
 		 * 
-		 * If it's a Table, handle Table - level action
-		 * If it's a GamePlay, handle GamePlay - level action
+		 * If it's a Table, handle Table - level action If it's a GamePlay,
+		 * handle GamePlay - level action
 		 */
 		@Override
 		protected void messageReceived(final Object message) {
-			Platform.runLater(() -> {		
-				if (message instanceof String)
-				{				
+			Platform.runLater(() -> {
+				if (message instanceof String) {
 					System.out.println("Message Received " + message);
-				}
-				else if (message instanceof Table)
-				{				
-					//	The table changed...  poker table should react to new state of table
-					pokerController.Handle_TableState((Table)message);
-					
-					//	This will refresh the info box in the table... will go away when game
-					//	is finished
-					pokerController.setlblNumberOfPlayers((Table)message);
-				}
-				else if (message instanceof GamePlay)
-				{
-					pokerController.Handle_GameState((GamePlay)message);
-			
-					//	The game changed...  poker table should react to the new state of game
+				} else if (message instanceof Table) {
+					// The table changed... poker table should react to new
+					// state of table
+					pokerController.Handle_TableState((Table) message);
+
+					// This will refresh the info box in the table... will go
+					// away when game
+					// is finished
+					pokerController.setlblNumberOfPlayers((Table) message);
+				} else if (message instanceof GamePlay) {
+					pokerController.Handle_GameState((GamePlay) message);
+
+					// The game changed... poker table should react to the new
+					// state of game
 				}
 			});
 		}
-		
-		
+
 		@Override
 		/*
 		 * serverShutdown - Call the hard exit.
 		 */
-	    protected void serverShutdown(String message) {
-	    	
-			Platform.runLater(() -> {		
+		protected void serverShutdown(String message) {
+
+			Platform.runLater(() -> {
 				Platform.exit();
-		        System.exit(0);
+				System.exit(0);
 			});
-	    }
-	
+		}
 
 	}
 }

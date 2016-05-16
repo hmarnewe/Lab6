@@ -108,12 +108,15 @@ public class PokerTableController {
 
 	@FXML
 	private HBox hBoxDeck;
-	
-	@FXML private HBox hboxP1Cards;
-	@FXML private HBox hboxP2Cards;
-	@FXML private HBox hboxP3Cards;
-	@FXML private HBox hboxP4Cards;
-	
+
+	@FXML
+	private HBox hboxP1Cards;
+	@FXML
+	private HBox hboxP2Cards;
+	@FXML
+	private HBox hboxP3Cards;
+	@FXML
+	private HBox hboxP4Cards;
 
 	@FXML
 	private void initialize() {
@@ -145,6 +148,14 @@ public class PokerTableController {
 	public void GetGameState() {
 		Action act = new Action(eAction.GameState, mainApp.getPlayer());
 		mainApp.messageSend(act);
+	}
+
+	// Declare a winner
+	public void winner(GamePlay winner) {
+		Player win = winner.getWinner();
+		if (win != null) {
+			txtPlayerArea.appendText(win.getPlayerName() + " wins! \n");
+		}
 	}
 
 	public void btnSitLeave_Click(ActionEvent event) {
@@ -258,21 +269,17 @@ public class PokerTableController {
 				new Image(getClass().getResourceAsStream("/img/b1fh.png"), 75, 75, true, true));
 		hBoxDeck.getChildren().add(imgBottomCard);
 
-		//int iDraw = HubGamePlay.getDrawCnt().getDrawNo();
-		
-		for (int i: HubGamePlay.GetOrder(HubGamePlay.getGameDealer().getiPlayerPosition()))
-		{
-			if (HubGamePlay.getPlayerByPosition(i) != null)
-			{
+		// int iDraw = HubGamePlay.getDrawCnt().getDrawNo();
+
+		for (int i : HubGamePlay.GetOrder(HubGamePlay.getGameDealer().getiPlayerPosition())) {
+			if (HubGamePlay.getPlayerByPosition(i) != null) {
 				Player p = HubGamePlay.getPlayerByPosition(i);
 				Hand h = HubGamePlay.getPlayerHand(p.getPlayerID());
-				
-				for (Card c: h.getCardsInHand())
-				{
-					ImageView imgCard = new ImageView(
-							new Image(getClass().getResourceAsStream("/img/" + c.getiCardNbr() + ".png"), 50, 50, true, true));
-					switch (i)
-					{
+
+				for (Card c : h.getCardsInHand()) {
+					ImageView imgCard = new ImageView(new Image(
+							getClass().getResourceAsStream("/img/" + c.getiCardNbr() + ".png"), 50, 50, true, true));
+					switch (i) {
 					case 1:
 						hboxP1Cards.getChildren().add(imgCard);
 						break;
@@ -298,8 +305,8 @@ public class PokerTableController {
 		int iRuleNbr = Integer.parseInt(mainApp.getRuleName().replace("PokerGame", ""));
 		eGame Game = eGame.getGame(iRuleNbr);
 		act.seteGame(Game);
-		
-		//	Clear the Cards in each players hands
+
+		// Clear the Cards in each players hands
 		hboxP1Cards.getChildren().clear();
 		hboxP2Cards.getChildren().clear();
 		hboxP3Cards.getChildren().clear();
@@ -307,16 +314,15 @@ public class PokerTableController {
 
 		mainApp.messageSend(act);
 	}
-	
-	
+
 	@FXML
 	void btnDeal_Click(ActionEvent event) {
 		Action act = new Action(eAction.Deal, mainApp.getPlayer());
 		mainApp.messageSend(act);
 	}
-	
+
 	@FXML
-	void btnDraw_Click(ActionEvent event) throws DeckException{
+	void btnDraw_Click(ActionEvent event) throws DeckException {
 		Action act = new Action(eAction.Draw, mainApp.getPlayer());
 		Deck deck = mainApp.getpHub().getdeck();
 		deck.Draw();
